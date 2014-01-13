@@ -26,7 +26,10 @@ action :create do
       source #{node[:virtualenvwrapper][:script]} && \
         mkvirtualenv #{new_resource.name}
     EOH
-    environment({ 'WORKON_HOME' => node['virtualenvwrapper']['workon_home'] })
+    environment({
+        'WORKON_HOME' => node['virtualenvwrapper']['workon_home'],
+        'HOME' => (::Dir.home(new_resource.owner) if new_resource.owner)
+      })
     creates virtualenv_path
   end
 end
@@ -54,6 +57,9 @@ def install_from_file
   pip_cmd = ::File.join(node['virtualenvwrapper']['workon_home'],
                         new_resource.name, "bin", "pip")
   execute "#{pip_cmd} install -r #{new_resource.requirements}" do
+    user new_resource.owner
+    group new_resource.group
+    environment({ 'HOME' => ::Dir.home(new_resource.owner) }) if new_resource.owner
     action :run
   end
 end
